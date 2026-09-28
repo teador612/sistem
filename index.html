@@ -3,136 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dinamik Oran Analizi & Canlı Skor Portalı</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Günün Maçları</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    .mac-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .mac-kart {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      border: 1px solid #e1e4e8;
+    }
+
+    .mac-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #6c757d;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+
+    .takimlar {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #212529;
+      text-align: center;
+      margin: 12px 0;
+    }
+
+    .skor {
+      background-color: #e9ecef;
+      text-align: center;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: #495057;
+    }
+  </style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <h1>Oran Analizi & Canlı Skor Portalı</h1>
-      <p>15 Dakikada Bir Yenilenen Otomatik Bülten ve Kombinasyon Analiz Sistemi</p>
-    </header>
+  <h2>Günün Maç Bülteni</h2>
+  <div id="mac-listesi" class="mac-container">Yükleniyor...</div>
 
-    <!-- Bilgi ve Durum Çubuğu -->
-    <section class="card status-section">
-      <div class="status-info">
-        <span class="status-title">Veri Kaynağı:</span>
-        <span id="data-status" class="status-badge">Yükleniyor...</span>
-      </div>
-      <div class="status-info">
-        <span class="status-title">Son Yenileme:</span>
-        <strong id="last-update-time">--:--</strong>
-      </div>
-      <div class="status-info">
-        <span class="status-title">Toplam Maç:</span>
-        <strong id="total-matches-count">0</strong>
-      </div>
-    </section>
+  <script>
+    const jsonUrl = 'https://raw.githubusercontent.com/teador612/sistem/main/maclar.json';
 
-    <!-- Sekmeler (Menü) -->
-    <div class="nav-tabs">
-      <button id="btn-gunun-maclari" class="tab-btn active" onclick="sekmeDegistir('gunun-maclari')">⚽ Günün Maçları & Canlı Skorlar</button>
-      <button id="btn-oran-analizi" class="tab-btn" onclick="sekmeDegistir('oran-analizi')">📊 Oran Kombinasyon Analizi</button>
-    </div>
+    async function maclariGetir() {
+      try {
+        const response = await fetch(jsonUrl);
+        const maclar = await response.json();
 
-    <!-- 1. SEKME: GÜNÜN MAÇLARI VE CANLI/BİTMİŞ SKORLAR -->
-    <section id="tab-gunun-maclari" class="tab-content card">
-      <h2>Günün Bülteni ve Skor Takibi</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Saat</th>
-              <th>Lig</th>
-              <th>Karşılaşma</th>
-              <th>Durum</th>
-              <th>Skor (İY / MS)</th>
-              <th>Oranlar (1 - X - 2)</th>
-            </tr>
-          </thead>
-          <tbody id="gunun-maclari-body">
-            <tr><td colspan="6" class="empty-state">Maçlar yükleniyor...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        const container = document.getElementById('mac-listesi');
+        container.innerHTML = '';
 
-    <!-- 2. SEKME: ORAN KOMBİNASYON ANALİZİ -->
-    <section id="tab-oran-analizi" class="tab-content card" style="display: none;">
-      <h2>Dinamik Oran Filtresi</h2>
-      <div class="filter-grid">
-        <div class="filter-item">
-          <label for="f-ms1">MS 1 Oranı</label>
-          <select id="f-ms1"><option value="">Tümü</option></select>
-        </div>
-        <div class="filter-item">
-          <label for="f-ms0">MS X Oranı</label>
-          <select id="f-ms0"><option value="">Tümü</option></select>
-        </div>
-        <div class="filter-item">
-          <label for="f-ms2">MS 2 Oranı</label>
-          <select id="f-ms2"><option value="">Tümü</option></select>
-        </div>
-        <div class="filter-item">
-          <label for="f-ust">2.5 Üst Oranı</label>
-          <select id="f-ust"><option value="">Tümü</option></select>
-        </div>
-        <div class="filter-item">
-          <label for="f-kg">KG Var Oranı</label>
-          <select id="f-kg"><option value="">Tümü</option></select>
-        </div>
-      </div>
+        maclar.forEach(mac => {
+          const kart = document.createElement('div');
+          kart.className = 'mac-kart';
 
-      <!-- İstatistik İnceleme Paneli -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-title">Eşleşen Maç</span>
-          <span id="st-count" class="stat-value">0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-title">MS 1</span>
-          <span id="st-ms1" class="stat-value">%0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-title">MS X</span>
-          <span id="st-ms0" class="stat-value">%0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-title">MS 2</span>
-          <span id="st-ms2" class="stat-value">%0</span>
-        </div>
-        <div class="stat-card highlight-green">
-          <span class="stat-title">2.5 Üst</span>
-          <span id="st-ust" class="stat-value">%0</span>
-        </div>
-        <div class="stat-card highlight-green">
-          <span class="stat-title">KG Var</span>
-          <span id="st-kg" class="stat-value">%0</span>
-        </div>
-      </div>
+          kart.innerHTML = `
+            <div class="mac-header">
+              <span><b>Saat:</b> ${mac['Saat'] || '-'}</span>
+              <span><b>Lig:</b> ${mac['Sütun1'] || mac['Lig'] || '-'}</span>
+            </div>
+            <div class="takimlar">
+              ${mac['Ev Sahibi']} vs ${mac['Misafir']}
+            </div>
+            <div class="skor">
+              İY: <b>${mac['IY'] || '-'}</b> | MS: <b>${mac['MS'] || '-'}</b>
+            </div>
+          `;
 
-      <!-- Eşleşen Maçlar Tablosu -->
-      <div class="table-responsive" style="margin-top: 20px;">
-        <h3>Filtreye Uyan Geçmiş Maçlar</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Tarih / Saat</th>
-              <th>Lig</th>
-              <th>Karşılaşma</th>
-              <th>Oranlar (1 - X - 2 | 2.5U)</th>
-              <th>MS Skor</th>
-            </tr>
-          </thead>
-          <tbody id="analiz-body">
-            <tr><td colspan="5" class="empty-state">Filtre seçimi yapın...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+          container.appendChild(kart);
+        });
+      } catch (error) {
+        console.error('Veri yükleme hatası:', error);
+        document.getElementById('mac-listesi').innerHTML = '<p>Maç verileri yüklenirken bir sorun oluştu.</p>';
+      }
+    }
 
-  <script src="app.js"></script>
+    maclariGetir();
+  </script>
+
 </body>
 </html>
