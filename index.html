@@ -72,33 +72,64 @@
     async function maclariGetir() {
       try {
         const response = await fetch(jsonUrl);
-        const maclar = await response.json();
-
+        if (!response.ok) {
+          throw new Error(`HTTP Hatasi: ${response.status}`);
+        }
+        
+        const data = await response.json();
         const container = document.getElementById('mac-listesi');
         container.innerHTML = '';
+
+        // Yapı kontrolü: Doğrudan liste mi yoksa 'matches' / 'maclar' objesi içinde mi?
+        let maclar = [];
+        if (Array.isArray(data)) {
+          maclar = data;
+        } else if (Array.isArray(data.matches)) {
+          maclar = data.matches;
+        } else if (Array.isArray(data.maclar)) {
+          maclar = data.maclar;
+        }
+
+        if (maclar.length === 0) {
+          container.innerHTML = '<p>Listelenecek maç verisi bulunamadı.</p>';
+          return;
+        }
 
         maclar.forEach(mac => {
           const kart = document.createElement('div');
           kart.className = 'mac-kart';
 
+          // Türkçe ve İngilizce anahtar kelimelere esnek erişim
+          const saat = mac['Saat'] || mac['time'] || '-';
+          const lig = mac['Sütun1'] || mac['Lig'] || mac['league'] || '-';
+          const evSahibi = mac['Ev Sahibi'] || mac['home'] || mac['home_team'] || 'Ev Sahibi';
+          const misafir = mac['Misafir'] || mac['away'] || mac['away_team'] || 'Misafir';
+          const iy = mac['IY'] || mac['ht_score'] || '-';
+          const ms = mac['MS'] || mac['ft_score'] || '-';
+
           kart.innerHTML = `
             <div class="mac-header">
-              <span><b>Saat:</b> ${mac['Saat'] || '-'}</span>
-              <span><b>Lig:</b> ${mac['Sütun1'] || mac['Lig'] || '-'}</span>
+              <span><b>Saat:</b> ${saat}</span>
+              <span><b>Lig:</b> ${lig}</span>
             </div>
             <div class="takimlar">
-              ${mac['Ev Sahibi']} vs ${mac['Misafir']}
+              ${evSahibi} vs ${misafir}
             </div>
             <div class="skor">
-              İY: <b>${mac['IY'] || '-'}</b> | MS: <b>${mac['MS'] || '-'}</b>
+              İY: <b>${iy}</b> | MS: <b>${ms}</b>
             </div>
           `;
 
           container.appendChild(kart);
         });
+
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
-        document.getElementById('mac-listesi').innerHTML = '<p>Maç verileri yüklenirken bir sorun oluştu.</p>';
+        console.error('Hata detayı:', error);
+        document.getElementById('mac-listesi').innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; color: red;">
+            <p><b>Veri yüklenirken hata oluştu!</b></p>
+            <p><small>${error.message}</small></p>
+          </div>`;
       }
     }
 
